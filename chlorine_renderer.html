@@ -276,6 +276,11 @@
 
 	window.addEventListener("resize", () => renderer.draw());
 
+	canvas.addEventListener("mousemove", (event) => {
+		event.preventDefault();
+		renderer.hover(event);
+	});
+
 	window.ondragover = () => false;
 	window.ondragleave = () => false;
 	window.ondragend = () => false;
