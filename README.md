@@ -1,5 +1,5 @@
-# Chlorine
-Replay viewer for [Halite2](https://halite.io/), in JavaScript (Electron).
+# Chlorine-Golad
+Replay viewer for Golad, in JavaScript (Electron).
 
 # Installation
 
@@ -18,14 +18,6 @@ npm install electron --save-dev --save-exact
 ./node_modules/.bin/electron .
 ```
 
-Finally, if you're on Windows, and desperate, there's a prebuilt binary in the [Releases](https://github.com/fohristiwhirl/chlorine/releases) section, though it's not really adequately tested. (For one thing, it uses an older version of Electron.)
-
-# Other dependencies
-* [node-zstandard](https://www.npmjs.com/package/node-zstandard) (gets installed by `npm install`)
-
 # Usage
 
-Open a file from the menu, or via command line with `electron . -o filename.hlt`. Drag-and-dropping a file onto the window may also work. Once a file is opened, navigate with left and right arrow keys.
-
-# Screenshot
-![Chlorine Screenshot](https://raw.githubusercontent.com/fohristiwhirl/chlorine/master/screenshot.png)
+Open a file from the menu, or via command line with `electron . -o filename.json`. Drag-and-dropping a file onto the window may also work. Once a file is opened, navigate with left and right arrow keys.
