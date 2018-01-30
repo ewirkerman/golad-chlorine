@@ -1,12 +1,9 @@
 {
-	"name": "Chlorine",
-	"description": "Replay viewer for Halite 2",
+	"name": "Chlorine-Golad",
+	"description": "Replay viewer for Golad",
 	"version": "1.0.8",
-	"author": "Fohristiwhirl",
+	"author": "Fohristiwhirl / Ewirkerman",
 	"main": "main.js",
-	"dependencies": {
-		"node-zstandard": "1.2.4"
-	},
 	"scripts": {
 		"pack": "electron-builder --dir"
 	},
