@@ -69,6 +69,9 @@
 		renderer.game = null;
 		renderer.turn = 0;
 
+		renderer.show_births = true;
+		renderer.show_deaths = true;
+
 		renderer.open = (filename) => {
 
 			console.log(`Trying to load ${filename}`);
@@ -243,17 +246,16 @@
 			}
 
 			if (curr !== UNOWNED) {
-				if (curr === next) {
-					context.fillStyle = colours[int(curr)]; // lives
-				} else {
-					context.fillStyle = dark_colours[int(curr)]; // dies
+				context.fillStyle = colours[int(curr)]; 			// default colour, for if it lives
+				if (curr !== next && renderer.show_deaths) {
+					context.fillStyle = dark_colours[int(curr)];	// dies
 				}
 				context.fillRect(x+BORDER_THICKNESS,y + BORDER_THICKNESS,TILE_SIZE - 2*BORDER_THICKNESS,TILE_SIZE - 2*BORDER_THICKNESS);
 			} else if (next !== UNOWNED) {
-				context.fillStyle = colours[int(next)]; // born
-				context.fillRect(x+ TILE_SIZE/4,y+TILE_SIZE/4,TILE_SIZE/2,TILE_SIZE/2);
-			} else {
-
+				if (renderer.show_births) {
+					context.fillStyle = colours[int(next)]; // born
+					context.fillRect(x+ TILE_SIZE/4,y+TILE_SIZE/4,TILE_SIZE/2,TILE_SIZE/2);
+				}
 			}
 		};
 

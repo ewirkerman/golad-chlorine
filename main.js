@@ -140,25 +140,23 @@ function make_main_menu() {
 			]
 		},
 		{
-			label: "Windows",
+			label: "View",
 			submenu: [
 				{
-					label: "Renderer",
+					label: "Births",
 					click: () => {
-						windows.show("renderer");
-					}
+						windows.send("renderer", "toggle", "show_births");
+					},
+					type: "checkbox",
+					checked: true,
 				},
 				{
-					label: "Info",
+					label: "Deaths",
 					click: () => {
-						windows.show("info");
-					}
-				},
-				{
-					label: "Events",
-					click: () => {
-						windows.show("events");
-					}
+						windows.send("renderer", "toggle", "show_deaths");
+					},
+					type: "checkbox",
+					checked: true,
 				},
 			]
 		},
