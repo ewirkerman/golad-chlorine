@@ -20,6 +20,8 @@ electron.app.on("ready", () => {
 		title: "Chlorine", show: true, width: 1200, height: 800, resizable: true, page: path.join(__dirname, "chlorine_renderer.html")
 	});
 
+	
+	/*
 	windows.new("info", {
 		title: "Info", show: false, width: 400, height: 800, resizable: true, page: path.join(__dirname, "chlorine_info.html")
 	});
@@ -27,6 +29,7 @@ electron.app.on("ready", () => {
 	windows.new("events", {
 		title: "Events", show: false, width: 400, height: 800, resizable: true, page: path.join(__dirname, "chlorine_info.html")
 	});
+	*/
 
 	electron.Menu.setApplicationMenu(make_main_menu());
 });
@@ -178,7 +181,7 @@ function make_main_menu() {
 				},
 			]
 		},
-		{
+		/*{
 			label: "View",
 			submenu: [
 				{
@@ -325,7 +328,7 @@ function make_main_menu() {
 					}
 				},
 			]
-		},
+		},*/
 		{
 			label: "Windows",
 			submenu: [
