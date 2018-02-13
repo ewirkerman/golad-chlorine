@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Chlorine-Golad</title>
+	<style>
+		body {
+			margin: 0;
+			border: 0;
+			padding: 0;
+			background-color: black;
+			color: white;
+			user-select: none;
+			cursor: default;
+			overflow: hidden;
+		}
+		#info_line {
+			margin: 10px;		/* calculation below of info_line_height total size relies on this */
+			border: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+
+<table style="width: calc(100% - 20px);" id="info_line"><tr>
+	<td style="width: 80%" id="unitbox">Starting up...</td>
+	<td align="right" id="measurebox"></td>
+	<td align="right" id="turnbox"></td>
+</tr></table>
+<canvas id="canvas" width="0" height="0"></canvas>
+
+<script>
+
+	"use strict";
+
+	const colours = ["#eeaaee", "#63ceca", "#ffbe00", "#c5ec98"];
+	const dark_colours = ["#9b6c9b", "#336a66", "#a17b00", "#708a51"];
+	const ranks = ["..", "1st", "2nd", "3rd", "4th"];
+
+	const UNOWNED = "."
+	const BORDER_THICKNESS = 4;
+	const TILE_SIZE = 40 + 2*BORDER_THICKNESS;
+	const TILE_COLOR_SIZE = TILE_SIZE - 2*BORDER_THICKNESS
+
+	const alert = require("./modules/alert");
+	const fs = require("fs");
+	const ipcRenderer = require("electron").ipcRenderer;
+	const stream = require("stream");
+
+	const info_line = document.getElementById("info_line");
+	const unitbox = document.getElementById("unitbox");
+	const measurebox = document.getElementById("measurebox");
+	const turnbox = document.getElementById("turnbox");
+	const canvas = document.getElementById("canvas");
+	const context = canvas.getContext("2d");
+
+	const info_line_height = info_line.offsetHeight + 20;		// relies on #info_line having margin of 10
+
+	function int(s) {
+		return parseInt(s, 10)
+	}
+
+	function make_renderer() {
+
+		let renderer = Object.create(null);
+
+		renderer.filename = "";
+		renderer.game = null;
+		renderer.turn = 0;
+
+		renderer.show_births = true;
+		renderer.show_deaths = true;
+
+		renderer.open = (filename) => {
+
+			console.log(`Trying to load ${filename}`);
+
+			try {
+				let contents = fs.readFileSync(filename);
+				renderer.game = JSON.parse(contents);
+			}
+			catch (err) {
+				alert("Couldn't load this file");
+				return
+			}
+
+			renderer.finish_load(filename);
+		};
+
+		renderer.finish_load = (filename) => {
+			renderer.filename = filename;
+			renderer.turn = 0;
+			renderer.draw();
+		};
+
+		renderer.forward = (n) => {		// Negative arguments are allowed (go back).
+
+			if (!renderer.game) {
+				return;
+			}
+
+			renderer.turn += n;
+
+			if (renderer.turn < 0) {
+				renderer.turn = 0;
+			}
+
+			if (renderer.turn >= renderer.game.frames.length) {
+				renderer.turn = renderer.game.frames.length - 1;
+			}
+
+			renderer.draw();
+		};
+
+		renderer.toggle = (varname) => {
+			renderer[varname] = !renderer[varname];
+			renderer.draw();
+		};
+
+		renderer.draw = () => {
+
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight - info_line_height;
+
+			if (!renderer.game) {
+				return;
+			}
+
+			renderer.display_board();
+			// renderer.display_move();
+			// renderer.highlighted_affected();
+			// renderer.highlight_stable();
+
+			let turn_string = `${renderer.turn} / ${renderer.game.frames.length - 1}`;
+			document.title = turn_string + " --- " + renderer.game.player_names.join(" / ");
+			turnbox.innerHTML = turn_string;
+
+			context.restore();
+		};
+
+		renderer.hover = (event) => {
+			if (!renderer.game) {
+				return;
+			}
+
+			let x = Math.floor(event.offsetX / TILE_SIZE)
+			let y = Math.floor(event.offsetY / TILE_SIZE)
+
+			let tiles = renderer.current_tiles()
+			if (y >= tiles.length || x >= tiles[0].length) {
+				unitbox.innerHTML = ``
+				return
+			}
+			let tile = renderer.current_tiles()[y][x]
+
+			let owner_string = (tile === UNOWNED) ? "Unowned" : renderer.game.player_names[int(tile)];
+			let colour = (tile === UNOWNED) ? "white" : colours[int(tile)];
+
+			unitbox.innerHTML = ` Tile (<span style="color: ${colour}">${owner_string}</span>)`;
+			unitbox.innerHTML += ` &mdash; [ ${x} , ${y} ]`;
+		}
+
+		renderer.click = (event) => {
+			if (!renderer.game) {
+				return;
+			}
+			log("This will allow for a single hypothetical move, but nothing else")
+
+			// find the clicked square
+			// if hypo undraw, and repaint the tiles around the hypo, remove it
+			// gray out the real move
+			// draw the new hypo, update the surrounding tiles
+		};
+
+		renderer.current_move_targets = () => {
+
+			// Returns an array of planets this turn with all needed info, BUT THE INDICES DO NOT MATCH PLANET ID.
+
+			if (!renderer.game) {
+				return [];
+			}
+
+			let move_targets = renderer.game.frames[renderer.turn].move_targets;
+
+			return move_targets;
+		};
+
+		renderer.current_tiles = () => {
+
+			// Returns an array of planets this turn with all needed info, BUT THE INDICES DO NOT MATCH PLANET ID.
+
+			if (!renderer.game) {
+				return [];
+			}
+
+			let frame = renderer.game.frames[renderer.turn].board;
+
+			return frame;
+		};
+
+		renderer.next_tiles = () => {
+
+			// Returns an array of planets this turn with all needed info, BUT THE INDICES DO NOT MATCH PLANET ID.
+
+			if (!renderer.game) {
+				return [];
+			}
+
+			if (renderer.turn >= renderer.game.frames.length - 1) {
+				return renderer.current_tiles();
+			}
+
+			let frame = renderer.game.frames[renderer.turn + 1].board;
+
+			return frame;
+		};
+
+		renderer.display_board = () => {
+			let frame = renderer.current_tiles()
+			let next_frame = renderer.next_tiles()
+			let move_targets = renderer.current_move_targets()
+
+			for (let i = 0; i < frame.length; i++) {
+				for (let j = 0; j < frame[i].length; j++) {
+					let tile = frame[i][j]
+					let next = next_frame[i][j]
+
+					// tile border
+					let move = false
+					for (let t = 0; t < move_targets.length; t++)	{
+						if (move_targets[t].row == i && move_targets[t].col == j) {
+							move = true
+							break
+						}
+					}
+					renderer.draw_tile(j*TILE_SIZE, i*TILE_SIZE, TILE_SIZE, move, tile, next)
+				}
+			}
+		};
+
+		renderer.draw_tile = (x, y, size, move, curr, next) => {
+			if (move) {
+				context.fillStyle = '#ffffff';
+				context.fillRect(x,y,TILE_SIZE,TILE_SIZE);
+			}
+
+			if (curr !== UNOWNED) {
+				context.fillStyle = colours[int(curr)]; 			// default colour, for if it lives
+				if (curr !== next && renderer.show_deaths) {
+					context.fillStyle = dark_colours[int(curr)];	// dies
+				}
+				context.fillRect(x+BORDER_THICKNESS,y + BORDER_THICKNESS,TILE_SIZE - 2*BORDER_THICKNESS,TILE_SIZE - 2*BORDER_THICKNESS);
+			} else if (next !== UNOWNED) {
+				if (renderer.show_births) {
+					context.fillStyle = colours[int(next)]; // born
+					context.fillRect(x+ TILE_SIZE/4,y+TILE_SIZE/4,TILE_SIZE/2,TILE_SIZE/2);
+				}
+			}
+		};
+
+		return renderer;
+	}
+
+	let renderer = make_renderer();
+
+	ipcRenderer.on("open", (event, filename) => {
+		renderer.open(filename);
+	});
+
+	ipcRenderer.on("forward", (event, n) => {
+		renderer.forward(n);
+	});
+
+	ipcRenderer.on("toggle", (event, varname) => {
+		renderer.toggle(varname);
+	});
+
+	window.addEventListener("resize", () => renderer.draw());
+
+	canvas.addEventListener("mousemove", (event) => {
+		event.preventDefault();
+		renderer.hover(event);
+	});
+
+	window.ondragover = () => false;
+	window.ondragleave = () => false;
+	window.ondragend = () => false;
+	window.ondrop = (event) => {
+		event.preventDefault();
+		renderer.open(event.dataTransfer.files[0].path);
+		return false;
+	};
+
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight - info_line_height;
+
+	// Give the window and canvas a little time to settle... (may prevent sudden jerk during load).
+
+	setTimeout(() => {
+		ipcRenderer.send("renderer_ready", null);
+		unitbox.innerHTML = "No file loaded. Use file menu or drag-and-drop.";
+	}, 200);
+
+</script>
+</body>
+</html>

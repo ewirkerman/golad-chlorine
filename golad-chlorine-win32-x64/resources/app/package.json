@@ -1,0 +1,13 @@
+{
+	"name": "Chlorine-Golad",
+	"description": "Replay viewer for Golad",
+	"version": "1.0.8",
+	"author": "Fohristiwhirl / Ewirkerman",
+	"main": "main.js",
+	"scripts": {
+		"pack": "electron-builder --dir"
+	},
+	"build": {
+		"asar": false
+	}
+}
